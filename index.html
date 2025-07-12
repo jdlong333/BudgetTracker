@@ -293,8 +293,17 @@
         import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-budget-app';
+        // IMPORTANT: Replace the placeholder values below with the configuration
+        // from YOUR OWN Firebase project. You can find this in your
+        // Project settings > General > Your apps > SDK setup and configuration.
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
         
         // --- App Initialization ---
         const app = initializeApp(firebaseConfig);
@@ -355,6 +364,7 @@
                 if (userId !== user.uid) {
                     userId = user.uid;
                     userIdEl.textContent = userId;
+                    const appId = firebaseConfig.appId; // Use appId from your config
                     transactionsCollection = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
                     settingsDoc = doc(db, `artifacts/${appId}/users/${userId}/settings/main`);
                     initializeDateSelectors();
@@ -382,6 +392,9 @@
                 userIdEl.textContent = "Authentication Failed";
                 if (error.code === 'auth/network-request-failed') {
                     statusMessageEl.innerHTML = `<span class="font-medium">Connection Error:</span> Could not connect to the database. Please check your network connection and refresh.`;
+                    statusMessageEl.classList.remove('hidden');
+                } else if (error.code === 'auth/api-key-not-valid') {
+                    statusMessageEl.innerHTML = `<span class="font-medium">Configuration Error:</span> The Firebase API Key is not valid. Please copy the correct configuration into the HTML file.`;
                     statusMessageEl.classList.remove('hidden');
                 }
             }
@@ -834,4 +847,3 @@
 
     </script>
 </body>
-</html>
