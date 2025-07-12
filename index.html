@@ -289,19 +289,12 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDyHE8aRf6aRkzQL3hhEAV2xsz06y_S354",
-            authDomain: "budget-tracker-46549.firebaseapp.com",
-            projectId: "budget-tracker-46549",
-            storageBucket: "budget-tracker-46549.appspot.com",
-            messagingSenderId: "583352946679",
-            appId: "1:583352946679:web:464e8ce8ea64d70489a8f2",
-            measurementId: "G-BDGLM64MER"
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-budget-app';
         
         // --- App Initialization ---
         const app = initializeApp(firebaseConfig);
@@ -362,8 +355,8 @@
                 if (userId !== user.uid) {
                     userId = user.uid;
                     userIdEl.textContent = userId;
-                    transactionsCollection = collection(db, `users/${userId}/transactions`);
-                    settingsDoc = doc(db, `users/${userId}/settings/main`);
+                    transactionsCollection = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+                    settingsDoc = doc(db, `artifacts/${appId}/users/${userId}/settings/main`);
                     initializeDateSelectors();
                     loadData();
                 }
@@ -379,10 +372,18 @@
         async function signInAndSetup() {
             try {
                 statusMessageEl.classList.add('hidden');
+                
+                // Set persistence to local to remember the user across sessions
+                await setPersistence(auth, browserLocalPersistence);
+
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    await signInAnonymously(auth);
+                    // onAuthStateChanged will handle the user object. If no user is found
+                    // in local persistence, this will create a new anonymous user.
+                    if (!auth.currentUser) {
+                        await signInAnonymously(auth);
+                    }
                 }
             } catch (error) {
                 console.error("Authentication Error:", error);
