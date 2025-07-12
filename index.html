@@ -571,11 +571,28 @@
             const paycheckAmount = parseFloat(monthlySettings[`paycheck${selectedPaycheckIndex}`]) || 0;
             const totalBills = getFilteredTransactions().reduce((sum, t) => sum + parseFloat(t.amount), 0);
             const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
-            const proratedBills = numPaychecks > 0 ? totalBills / numPaychecks : 0;
-            
+
+            // Calculate custom bill allocations
+            let sumCustomBills = 0;
+            let numCustomSet = 0;
+            for (let i = 1; i <= numPaychecks; i++) {
+                const customBills = parseFloat(monthlySettings[`bills_p${i}`]);
+                if (!isNaN(customBills)) {
+                    sumCustomBills += customBills;
+                    numCustomSet++;
+                }
+            }
+            const remainingBills = totalBills - sumCustomBills;
+            const numUnset = numPaychecks - numCustomSet;
+            const defaultPerUnset = numUnset > 0 ? remainingBills / numUnset : 0;
+
+            // Get bills for this paycheck
+            const customBillsThis = parseFloat(monthlySettings[`bills_p${selectedPaycheckIndex}`]);
+            const billsAmount = !isNaN(customBillsThis) ? customBillsThis : defaultPerUnset;
+
             const savingAmount = parseFloat(monthlySettings[`saving_p${selectedPaycheckIndex}`]) || 0;
             const investingAmount = parseFloat(monthlySettings[`investing_p${selectedPaycheckIndex}`]) || 0;
-            const remainingAmount = paycheckAmount - proratedBills - savingAmount - investingAmount;
+            const remainingAmount = paycheckAmount - billsAmount - savingAmount - investingAmount;
 
             const formatPercent = (amount) => paycheckAmount > 0 ? `(${(amount / paycheckAmount * 100).toFixed(1)}%)` : '(0.0%)';
 
@@ -588,10 +605,10 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center border-t border-gray-100 pt-2 pb-2">
-                    <span class="text-gray-600">Bills:</span>
+                    <label for="bills-breakdown" class="text-gray-600">Bills:</label>
                     <div class="flex items-baseline justify-end space-x-2">
-                        <span class="w-24 text-right font-semibold text-red-600">-$${proratedBills.toFixed(2)}</span>
-                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(proratedBills)}</span>
+                        <input type="number" id="bills-breakdown" value="${billsAmount.toFixed(2)}" class="w-24 text-right font-semibold border-b border-gray-300 text-red-600 focus:outline-none bg-transparent" placeholder="0.00">
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(billsAmount)}</span>
                     </div>
                 </div>
                 <div class="flex justify-between items-center border-t border-gray-100 pt-2 pb-2">
@@ -626,7 +643,7 @@
                 </div>
             `;
             
-            const billsPercent = paycheckAmount > 0 ? (proratedBills / paycheckAmount) * 100 : 0;
+            const billsPercent = paycheckAmount > 0 ? (billsAmount / paycheckAmount) * 100 : 0;
             const savingPercent = paycheckAmount > 0 ? (savingAmount / paycheckAmount) * 100 : 0;
             const investingPercent = paycheckAmount > 0 ? (investingAmount / paycheckAmount) * 100 : 0;
             const remainingPercent = paycheckAmount > 0 ? (remainingAmount / paycheckAmount) * 100 : 0;
@@ -778,6 +795,9 @@
             try {
                 await addDoc(transactionsCollection, { description, amount, type: 'expense', timestamp: transactionDate.getTime() });
                 transactionForm.reset();
+                descriptionInput.value = ''; // Explicit clear for safety
+                amountInput.value = '';
+                descriptionInput.focus(); // Ready for next entry
             } catch (error) { 
                 console.error("Error adding transaction: ", error);
                 statusMessageEl.innerHTML = `<span class="font-medium">Add Error:</span> ${error.message}. May be permissions or network—check Firebase.`;
@@ -885,12 +905,12 @@
         
         // Use event delegation for dynamically created inputs in the breakdown section
         breakdownDetailsContainer.addEventListener('focusin', (e) => {
-            if (e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
+            if (e.target.matches('#bills-breakdown') || e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
                 e.target.select();
             }
         });
         breakdownDetailsContainer.addEventListener('change', (e) => {
-            if (e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
+            if (e.target.matches('#bills-breakdown') || e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
                 handleBreakdownInputChange(e);
             }
         });
