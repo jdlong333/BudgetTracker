@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Budget">
+    <!-- To add a custom icon, create a 180x180px PNG file, name it 'apple-touch-icon.png', and upload it to your GitHub repository. -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
     <title>Budget App</title>
@@ -15,44 +16,95 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html {
-            background-color: #f3f4f6;
+            background-color: #f3f4f6; /* bg-gray-100 */
         }
         body {
+            /* Use Apple's system font, with fallbacks */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; } /* gray-300 */
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; } /* gray-400 */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+        .glass-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .glass-container select {
+            background: rgba(249, 250, 251, 0.7); /* gray-50 */
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
         .card {
             background-color: #ffffff;
-            border-radius: 1.25rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+            border-radius: 1.25rem; /* Slightly more rounded */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07); /* Softer shadow */
             padding: 1.5rem;
         }
         .input-field {
-            background-color: #f9fafb;
-            border-color: #e5e7eb;
+            background-color: #f9fafb; /* bg-gray-50 */
+            border-color: #e5e7eb; /* border-gray-200 */
         }
         .input-field:focus {
-             --tw-ring-color: rgb(59 130 246 / 0.5);
-             border-color: #3b82f6;
+             --tw-ring-color: rgb(59 130 246 / 0.5); /* blue-500 with opacity */
+             border-color: #3b82f6; /* blue-500 */
+        }
+        .nav-tab {
+            transition: all 0.2s ease-in-out;
         }
         .nav-tab.active {
-            color: #2563eb;
-            background-color: #eff6ff;
+            color: #2563eb; /* blue-600 */
+            background-color: #eff6ff; /* blue-50 */
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-700">
 
-    <div class="container mx-auto max-w-lg p-4 pb-24">
+    <div class="container mx-auto max-w-lg p-4 pb-24"> <!-- Added padding-bottom for nav bar -->
+        <!-- Header -->
         <header class="text-center my-6 relative">
             <h1 class="text-4xl font-bold text-gray-800">Budget Tracker</h1>
+            <div id="auth-container" class="absolute top-0 right-0"></div>
         </header>
 
-        <div id="app-content">
+        <!-- Status Message -->
+        <div id="status-message" class="hidden text-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+          <!-- Content will be set by JS -->
+        </div>
+
+        <!-- Logged Out View -->
+        <div id="logged-out-view" class="hidden text-center card">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Welcome!</h2>
+            <p class="text-gray-600 mb-6">Please sign in with Google to save your budget and access your data securely.</p>
+            <button id="sign-in-btn" class="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-semibold flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.012 35.846 44 30.138 44 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                Sign In with Google
+            </button>
+        </div>
+
+        <!-- Logged In Content -->
+        <div id="logged-in-content" class="hidden">
             <main id="budget-page" class="space-y-8">
+                <!-- Summary Section -->
                 <section id="summary" class="card">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">Summary</h2>
                     <div class="grid grid-cols-3 gap-4 text-center py-4">
@@ -69,15 +121,16 @@
                             <p id="total-invested" class="text-2xl font-bold text-purple-600">$0.00</p>
                         </div>
                     </div>
-                    <div class="mt-4">
+                    <div class="glass-container">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Select Period:</label>
                         <div class="flex space-x-2">
-                            <select id="month-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800 border-gray-200 bg-gray-50"></select>
-                            <select id="year-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800 border-gray-200 bg-gray-50"></select>
+                            <select id="month-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800"></select>
+                            <select id="year-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800"></select>
                         </div>
                     </div>
                 </section>
 
+                <!-- Income Section -->
                 <section id="income-section" class="card">
                     <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
                         <h2 class="text-2xl font-semibold text-gray-800">Monthly Income</h2>
@@ -108,14 +161,18 @@
                     </div>
                 </section>
                 
+                <!-- Paycheck Breakdown Section -->
                 <section id="paycheck-breakdown-section" class="card">
                     <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
                         <h2 class="text-2xl font-semibold text-gray-800">Paycheck Breakdown</h2>
                         <select id="breakdown-paycheck-select" class="text-sm rounded-lg border-gray-200 bg-gray-50 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-1"></select>
                     </div>
-                    <div id="breakdown-details" class="space-y-2"></div>
+                    <div id="breakdown-details" class="space-y-2">
+                        <!-- Breakdown items will be dynamically inserted here -->
+                    </div>
                 </section>
 
+                <!-- Add Expense Section -->
                 <section id="add-transaction" class="card">
                     <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
                         <h2 class="text-2xl font-semibold text-gray-800">Add Bill/Expense</h2>
@@ -139,6 +196,7 @@
                     </form>
                 </section>
 
+                <!-- Transactions List Section -->
                 <section id="transactions" class="card">
                     <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
                         <h2 class="text-2xl font-semibold text-gray-800">History</h2>
@@ -146,10 +204,13 @@
                             Import Bills
                         </button>
                     </div>
-                    <ul id="transaction-list" class="space-y-3 max-h-96 overflow-y-auto"></ul>
+                    <ul id="transaction-list" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Transactions will be dynamically inserted here -->
+                    </ul>
                 </section>
             </main>
 
+            <!-- Investing Page Content -->
             <main id="investing-page" class="space-y-8 hidden">
                 <section class="card">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Retirement Profile</h2>
@@ -217,17 +278,9 @@
             </main>
         </div>
 
-        <!-- Data Management Section -->
-        <footer class="card mt-8 text-center">
-             <h2 class="text-xl font-semibold text-gray-800 mb-4">Data Management</h2>
-             <div class="flex space-x-4">
-                <button id="save-data-btn" class="flex-1 bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-semibold">
-                    Save Data
-                </button>
-                <button id="clear-data-btn" class="flex-1 bg-red-600 text-white py-2.5 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 font-semibold">
-                    Clear All Data
-                </button>
-             </div>
+        <!-- User ID Display -->
+        <footer class="text-center mt-8">
+            <p class="text-xs text-gray-500">User ID: <span id="user-id">Loading...</span></p>
         </footer>
 
         <!-- Navigation Bar -->
@@ -245,17 +298,61 @@
         </nav>
     </div>
 
-    <!-- App Logic -->
-    <script>
-        // --- App State ---
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyHE8aRf6aRkzQL3hhEAV2xsz06y_S354",
+            authDomain: "budget-tracker-46549.firebaseapp.com",
+            projectId: "budget-tracker-46549",
+            storageBucket: "budget-tracker-46549.appspot.com",
+            messagingSenderId: "583352946679",
+            appId: "1:583352946679:web:464e8ce8ea64d70489a8f2",
+            measurementId: "G-BDGLM64MER"
+        };
+        
+        // --- App Initialization ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        let db;
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        } catch (error) {
+            console.error("Firestore initialization failed:", error);
+            // Optionally show a message to user
+        }
+        const provider = new GoogleAuthProvider();
+
+        let userId = null;
+        let transactionsCollection;
+        let settingsDoc;
+        let unsubscribeTransactions = () => {};
+        let unsubscribeSettings = () => {};
         let allTransactions = [];
         let settings = {};
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
+        let transactionsReady = false;
+        let settingsReady = false;
 
         // --- DOM Elements ---
+        const statusMessageEl = document.getElementById('status-message');
+        const loggedOutView = document.getElementById('logged-out-view');
+        const loggedInContent = document.getElementById('logged-in-content');
+        const signInBtn = document.getElementById('sign-in-btn');
+        const authContainer = document.getElementById('auth-container');
         const budgetPage = document.getElementById('budget-page');
         const investingPage = document.getElementById('investing-page');
+        const navBar = document.getElementById('nav-bar');
         const navTabs = document.querySelectorAll('.nav-tab');
         const totalIncomeEl = document.getElementById('total-income');
         const totalSavedEl = document.getElementById('total-saved');
@@ -264,6 +361,7 @@
         const descriptionInput = document.getElementById('description');
         const amountInput = document.getElementById('amount');
         const transactionList = document.getElementById('transaction-list');
+        const userIdEl = document.getElementById('user-id');
         const paycheckInputs = document.querySelectorAll('.paycheck-input');
         const payFrequencySelect = document.getElementById('pay-frequency');
         const weeklyPaychecksContainer = document.getElementById('weekly-paychecks');
@@ -272,7 +370,7 @@
         const importBillsBtn = document.getElementById('import-bills');
         const breakdownPaycheckSelect = document.getElementById('breakdown-paycheck-select');
         const breakdownDetailsContainer = document.getElementById('breakdown-details');
-        const totalMonthlyBillsDisplay = document.getElementById('total-monthly-bills-display');
+        const totalMonthlyBills = document.getElementById('total-monthly-bills-display');
         const perPaycheckBillsDisplay = document.getElementById('per-paycheck-bills-display');
         const currentAgeInput = document.getElementById('current-age');
         const retirementAgeInput = document.getElementById('retirement-age');
@@ -285,44 +383,63 @@
         const simContributionInput = document.getElementById('sim-contribution');
         const simFrequencySelect = document.getElementById('sim-frequency');
         const simProjectedBalanceEl = document.getElementById('sim-projected-balance');
-        const saveDataBtn = document.getElementById('save-data-btn');
-        const clearDataBtn = document.getElementById('clear-data-btn');
 
-        // --- Data Persistence (Local Storage) ---
-        function saveData() {
-            localStorage.setItem('budgetAppSettings', JSON.stringify(settings));
-            localStorage.setItem('budgetAppTransactions', JSON.stringify(allTransactions));
-            alert('Data Saved!');
+        // --- Authentication ---
+        async function initializeAuth() {
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        // User is signed in.
+                        loggedOutView.classList.add('hidden');
+                        loggedInContent.classList.remove('hidden');
+                        navBar.classList.remove('hidden');
+                        
+                        if (userId !== user.uid) {
+                            userId = user.uid;
+                            userIdEl.textContent = user.displayName || user.email;
+                            transactionsCollection = collection(db, `users/${userId}/transactions`);
+                            settingsDoc = doc(db, `users/${userId}/settings/main`);
+                            initializeDateSelectors();
+                            loadData();
+                            renderSignOutButton(user);
+                        }
+                    } else {
+                        // User is signed out.
+                        userId = null;
+                        userIdEl.textContent = "Not signed in";
+                        loggedOutView.classList.remove('hidden');
+                        loggedInContent.classList.add('hidden');
+                        navBar.classList.add('hidden');
+                        authContainer.innerHTML = ''; // Clear sign-out button
+                        unsubscribeTransactions();
+                        unsubscribeSettings();
+                    }
+                });
+            } catch (error) {
+                console.error("Auth Persistence Error:", error);
+                statusMessageEl.innerHTML = `<span class="font-medium">Error:</span> Could not enable offline persistence. Data may not be saved between sessions.`;
+                statusMessageEl.classList.remove('hidden');
+            }
+        }
+        
+        function renderSignOutButton(user) {
+            authContainer.innerHTML = `
+                <button id="sign-out-btn" class="text-sm text-blue-600 hover:underline">Sign Out</button>
+            `;
+            document.getElementById('sign-out-btn').addEventListener('click', () => {
+                signOut(auth);
+            });
         }
 
-        function loadData() {
-            const savedSettings = localStorage.getItem('budgetAppSettings');
-            const savedTransactions = localStorage.getItem('budgetAppTransactions');
-
-            if (savedSettings) {
-                settings = JSON.parse(savedSettings);
-                if (!settings.monthlyData) settings.monthlyData = {};
-            } else {
-                settings = { monthlyData: {} };
-            }
-
-            if (savedTransactions) {
-                allTransactions = JSON.parse(savedTransactions);
-            } else {
-                allTransactions = [];
-            }
-            updateUI();
-        }
-
-        clearDataBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
-                localStorage.removeItem('budgetAppSettings');
-                localStorage.removeItem('budgetAppTransactions');
-                window.location.reload();
-            }
+        signInBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    console.error("Sign-in Error:", error);
+                    statusMessageEl.innerHTML = `<span class="font-medium">Sign-In Error:</span> ${error.message}`;
+                    statusMessageEl.classList.remove('hidden');
+                });
         });
-
-        saveDataBtn.addEventListener('click', saveData);
 
         // --- Date Handling ---
         function initializeDateSelectors() {
@@ -339,7 +456,40 @@
             yearSelect.value = selectedYear;
         }
 
-        // --- Filtering ---
+        // --- Data Handling & Filtering ---
+        function loadData() {
+            if (!userId) return;
+            transactionsReady = false;
+            settingsReady = false;
+            unsubscribeTransactions();
+            unsubscribeSettings();
+
+            const errorHandler = (error) => {
+                console.error("Firestore Error:", error);
+                statusMessageEl.innerHTML = `<span class="font-medium">Database Error:</span> Could not load data. Please check your connection or Firebase rules.`;
+                statusMessageEl.classList.remove('hidden');
+            };
+
+            unsubscribeTransactions = onSnapshot(query(transactionsCollection), (snapshot) => {
+                statusMessageEl.classList.add('hidden');
+                allTransactions = [];
+                snapshot.forEach(doc => {
+                    allTransactions.push({ id: doc.id, ...doc.data() });
+                });
+                transactionsReady = true;
+                if(settingsReady) updateUI();
+            }, errorHandler);
+
+            unsubscribeSettings = onSnapshot(settingsDoc, (doc) => {
+                statusMessageEl.classList.add('hidden');
+                settings = doc.exists() ? doc.data() : { monthlyData: {} };
+                if (!settings.monthlyData) settings.monthlyData = {};
+                
+                settingsReady = true;
+                if(transactionsReady) updateUI();
+            }, errorHandler);
+        }
+
         function getFilteredTransactions() {
             return allTransactions.filter(transaction => {
                 const transactionDate = new Date(transaction.timestamp);
@@ -349,16 +499,19 @@
 
         // --- UI Rendering ---
         function updateUI() {
+            if (!transactionsReady || !settingsReady) return; // Guard clause
+
             const monthKey = `${selectedYear}-${selectedMonth}`;
             const monthlySettings = settings.monthlyData?.[monthKey] || {};
 
+            // Update global settings inputs from loaded data
             payFrequencySelect.value = settings.payFrequency || 'bi-weekly';
             currentAgeInput.value = settings.currentAge || '';
             retirementAgeInput.value = settings.retirementAge || '';
             for(let i = 1; i <= 4; i++) {
                 document.getElementById(`paycheck${i}`).value = monthlySettings[`paycheck${i}`] || '';
             }
-            updatePayFrequencyUI();
+            updatePayFrequencyUI(); // Update visibility based on loaded settings
 
             const filteredTransactions = getFilteredTransactions();
             renderTransactions(filteredTransactions);
@@ -545,7 +698,7 @@
             }
 
             const projectedValue = calculateFutureValue(totalContributions, annualContribution, yearsToGrow, 0.09);
-            const annualWithdrawal = projectedValue * 0.04;
+            const annualWithdrawal = projectedValue = projectedValue * 0.04;
 
             projectedBalanceEl.textContent = `$${Math.round(projectedValue).toLocaleString()}`;
             annualWithdrawalEl.textContent = `$${Math.round(annualWithdrawal).toLocaleString()}`;
@@ -580,7 +733,8 @@
             simProjectedBalanceEl.textContent = `$${Math.round(simValue).toLocaleString()}`;
         }
 
-        function saveAllData() {
+        async function saveSettings() {
+             if (!userId) return;
              try {
                 // Save global settings
                 settings.payFrequency = payFrequencySelect.value;
@@ -595,8 +749,12 @@
                     settings.monthlyData[monthKey][`paycheck${i}`] = document.getElementById(`paycheck${i}`).value;
                 }
                 
-                saveData();
-             } catch (error) { console.error("Error saving settings:", error); }
+                await setDoc(settingsDoc, settings, { merge: true });
+             } catch (error) { 
+                 console.error("Error saving settings:", error);
+                 statusMessageEl.innerHTML = `<span class="font-medium">Save Error:</span> ${error.message}. Check Firebase console for details (e.g., security rules).`;
+                 statusMessageEl.classList.remove('hidden');
+             }
         }
 
         // --- Event Listeners ---
@@ -610,37 +768,38 @@
             });
         });
 
-        transactionForm.addEventListener('submit', (e) => {
+        transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!userId) return;
             const description = descriptionInput.value.trim();
             const amount = parseFloat(amountInput.value);
             if (description === '' || isNaN(amount) || amount <= 0) return;
             const transactionDate = new Date(selectedYear, selectedMonth, new Date().getDate());
-            
-            const newTransaction = {
-                id: `id_${new Date().getTime()}`, // Simple unique ID
-                description, 
-                amount, 
-                type: 'expense', 
-                timestamp: transactionDate.getTime()
-            };
-            allTransactions.push(newTransaction);
-            transactionForm.reset();
-            saveAllData();
-            updateUI();
-        });
-        
-        transactionList.addEventListener('click', (e) => {
-            const deleteButton = e.target.closest('.delete-btn');
-            if (deleteButton) {
-                const id = deleteButton.dataset.id;
-                allTransactions = allTransactions.filter(t => t.id !== id);
-                saveAllData();
-                updateUI();
+            try {
+                await addDoc(transactionsCollection, { description, amount, type: 'expense', timestamp: transactionDate.getTime() });
+                transactionForm.reset();
+            } catch (error) { 
+                console.error("Error adding transaction: ", error);
+                statusMessageEl.innerHTML = `<span class="font-medium">Add Error:</span> ${error.message}. May be permissions or network—check Firebase.`;
+                statusMessageEl.classList.remove('hidden');
             }
         });
         
-        importBillsBtn.addEventListener('click', () => {
+        transactionList.addEventListener('click', async (e) => {
+            const deleteButton = e.target.closest('.delete-btn');
+            if (deleteButton) {
+                const id = deleteButton.dataset.id;
+                try { await deleteDoc(doc(db, `users/${userId}/transactions`, id)); } 
+                catch (error) { 
+                    console.error("Error deleting transaction: ", error);
+                    statusMessageEl.innerHTML = `<span class="font-medium">Delete Error:</span> ${error.message}. Check permissions.`;
+                    statusMessageEl.classList.remove('hidden'); 
+                }
+            }
+        });
+        
+        importBillsBtn.addEventListener('click', async () => {
+            if (!userId) return;
             let prevMonth = selectedMonth - 1, prevYear = selectedYear;
             if (prevMonth < 0) { prevMonth = 11; prevYear--; }
 
@@ -651,28 +810,25 @@
 
             if (prevMonthTransactions.length === 0) { alert("No bills found in the previous month to import."); return; }
             const currentMonthDescriptions = new Set(getFilteredTransactions().map(t => t.description));
+            const batch = writeBatch(db);
             let importCount = 0;
 
             prevMonthTransactions.forEach(t => {
                 if (!currentMonthDescriptions.has(t.description)) {
-                    allTransactions.push({
-                        id: `id_${new Date().getTime()}_${importCount}`,
-                        description: t.description, 
-                        amount: t.amount, 
-                        type: 'expense', 
-                        timestamp: new Date(selectedYear, selectedMonth, 1).getTime()
-                    });
+                    const newDocRef = doc(transactionsCollection);
+                    batch.set(newDocRef, { description: t.description, amount: t.amount, type: 'expense', timestamp: new Date(selectedYear, selectedMonth, 1).getTime() });
                     importCount++;
                 }
             });
 
             if (importCount > 0) {
-                saveAllData();
-                updateUI();
-                alert(`Successfully imported ${importCount} bill(s).`); 
-            } else {
-                alert("All bills from the previous month already exist.");
-            }
+                try { await batch.commit(); alert(`Successfully imported ${importCount} bill(s).`); } 
+                catch (error) { 
+                    console.error("Error importing bills: ", error); 
+                    statusMessageEl.innerHTML = `<span class="font-medium">Import Error:</span> ${error.message}.`;
+                    statusMessageEl.classList.remove('hidden');
+                }
+            } else { alert("All bills from the previous month already exist."); }
         });
         
         function handlePeriodChange() {
@@ -696,9 +852,11 @@
             }
         }
 
-        function handlePayFrequencyChange() {
-            settings.payFrequency = payFrequencySelect.value;
-            saveAllData();
+        function handlePayFrequencyChange(shouldSave = true) {
+            if (shouldSave) {
+                settings.payFrequency = payFrequencySelect.value;
+                saveSettings();
+            }
             updatePayFrequencyUI();
             updateUI();
         }
@@ -713,8 +871,7 @@
             if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
             
             settings.monthlyData[monthKey][key] = e.target.value;
-            saveAllData();
-            updateUI();
+            saveSettings();
         }
 
         function handlePaycheckInputChange(e) {
@@ -723,10 +880,10 @@
             if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
             
             settings.monthlyData[monthKey][e.target.id] = e.target.value;
-            saveAllData();
-            updateUI();
+            saveSettings();
         }
         
+        // Use event delegation for dynamically created inputs in the breakdown section
         breakdownDetailsContainer.addEventListener('focusin', (e) => {
             if (e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
                 e.target.select();
@@ -738,25 +895,23 @@
             }
         });
 
+        // Add focus listeners to all static number inputs
         [...paycheckInputs, amountInput, currentAgeInput, retirementAgeInput, simContributionInput].forEach(input => {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
         monthSelect.addEventListener('change', handlePeriodChange);
         yearSelect.addEventListener('change', handlePeriodChange);
-        payFrequencySelect.addEventListener('change', handlePayFrequencyChange);
+        payFrequencySelect.addEventListener('change', () => handlePayFrequencyChange(true));
         paycheckInputs.forEach(input => input.addEventListener('change', handlePaycheckInputChange));
         breakdownPaycheckSelect.addEventListener('change', updatePaycheckBreakdown);
-        currentAgeInput.addEventListener('change', saveAllData);
-        retirementAgeInput.addEventListener('change', saveAllData);
+        currentAgeInput.addEventListener('change', saveSettings);
+        retirementAgeInput.addEventListener('change', saveSettings);
         simContributionInput.addEventListener('input', runSimulation);
         simFrequencySelect.addEventListener('change', runSimulation);
 
         // --- Initial Load ---
-        window.onload = () => {
-            initializeDateSelectors();
-            loadData();
-        };
+        initializeAuth();
 
     </script>
 </body>
