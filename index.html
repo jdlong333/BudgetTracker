@@ -310,6 +310,8 @@
         let settings = {};
         let selectedMonth = new Date().getMonth();
         let selectedYear = new Date().getFullYear();
+        let transactionsReady = false;
+        let settingsReady = false;
 
         // --- DOM Elements ---
         const statusMessageEl = document.getElementById('status-message');
@@ -403,6 +405,8 @@
         // --- Data Handling & Filtering ---
         function loadData() {
             if (!userId) return;
+            transactionsReady = false;
+            settingsReady = false;
             unsubscribeTransactions();
             unsubscribeSettings();
 
@@ -422,7 +426,8 @@
                 snapshot.forEach(doc => {
                     allTransactions.push({ id: doc.id, ...doc.data() });
                 });
-                updateUI();
+                transactionsReady = true;
+                if(settingsReady) updateUI();
             }, errorHandler);
 
             unsubscribeSettings = onSnapshot(settingsDoc, (doc) => {
@@ -430,14 +435,8 @@
                 settings = doc.exists() ? doc.data() : { monthlyData: {} };
                 if (!settings.monthlyData) settings.monthlyData = {};
                 
-                payFrequencySelect.value = settings.payFrequency || 'bi-weekly';
-                currentAgeInput.value = settings.currentAge || '';
-                retirementAgeInput.value = settings.retirementAge || '';
-                for(let i = 1; i <= 4; i++) {
-                    document.getElementById(`paycheck${i}`).value = settings[`paycheck${i}`] || '';
-                }
-                handlePayFrequencyChange(false);
-                updateUI(); 
+                settingsReady = true;
+                if(transactionsReady) updateUI();
             }, errorHandler);
         }
 
@@ -450,6 +449,17 @@
 
         // --- UI Rendering ---
         function updateUI() {
+            if (!transactionsReady || !settingsReady) return; // Guard clause
+
+            // Update global settings inputs from loaded data
+            payFrequencySelect.value = settings.payFrequency || 'bi-weekly';
+            currentAgeInput.value = settings.currentAge || '';
+            retirementAgeInput.value = settings.retirementAge || '';
+            for(let i = 1; i <= 4; i++) {
+                document.getElementById(`paycheck${i}`).value = settings[`paycheck${i}`] || '';
+            }
+            updatePayFrequencyUI(); // Update visibility based on loaded settings
+
             const filteredTransactions = getFilteredTransactions();
             renderTransactions(filteredTransactions);
             updateSummary();
@@ -592,8 +602,8 @@
         }
 
         function calculateInvestmentProjection() {
-            const currentAge = parseInt(currentAgeInput.value);
-            const retirementAge = parseInt(retirementAgeInput.value);
+            const currentAge = parseInt(currentAgeInput.value) || 0;
+            const retirementAge = parseInt(retirementAgeInput.value) || 0;
             const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
             
             let totalContributions = 0;
@@ -646,8 +656,8 @@
         }
         
         function runSimulation() {
-            const currentAge = parseInt(currentAgeInput.value);
-            const retirementAge = parseInt(retirementAgeInput.value);
+            const currentAge = parseInt(currentAgeInput.value) || 0;
+            const retirementAge = parseInt(retirementAgeInput.value) || 0;
             const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
 
             let totalContributions = 0;
@@ -753,8 +763,8 @@
             selectedYear = parseInt(yearSelect.value);
             updateUI();
         }
-
-        function handlePayFrequencyChange(shouldSave = true) {
+        
+        function updatePayFrequencyUI() {
             const isWeekly = payFrequencySelect.value === 'weekly';
             weeklyPaychecksContainer.classList.toggle('hidden', !isWeekly);
             
@@ -764,12 +774,18 @@
             for(let i=1; i<=numPaychecks; i++) {
                 breakdownPaycheckSelect.innerHTML += `<option value="${i}">Paycheck ${i}</option>`;
             }
-            if (currentSelection <= numPaychecks) {
+            if (currentSelection > 0 && currentSelection <= numPaychecks) {
                 breakdownPaycheckSelect.value = currentSelection;
             }
+        }
 
+        function handlePayFrequencyChange(shouldSave = true) {
+            updatePayFrequencyUI();
             updateUI();
-            if (shouldSave) saveSettings();
+            if (shouldSave) {
+                settings.payFrequency = payFrequencySelect.value;
+                saveSettings();
+            }
         }
 
         function handleBreakdownInputChange(e) {
