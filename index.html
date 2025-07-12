@@ -370,7 +370,7 @@
         const importBillsBtn = document.getElementById('import-bills');
         const breakdownPaycheckSelect = document.getElementById('breakdown-paycheck-select');
         const breakdownDetailsContainer = document.getElementById('breakdown-details');
-        const totalMonthlyBills = document.getElementById('total-monthly-bills-display');
+        const totalMonthlyBillsDisplay = document.getElementById('total-monthly-bills-display');
         const perPaycheckBillsDisplay = document.getElementById('per-paycheck-bills-display');
         const currentAgeInput = document.getElementById('current-age');
         const retirementAgeInput = document.getElementById('retirement-age');
@@ -698,7 +698,7 @@
             }
 
             const projectedValue = calculateFutureValue(totalContributions, annualContribution, yearsToGrow, 0.09);
-            const annualWithdrawal = projectedValue = projectedValue * 0.04;
+            const annualWithdrawal = projectedValue * 0.04;
 
             projectedBalanceEl.textContent = `$${Math.round(projectedValue).toLocaleString()}`;
             annualWithdrawalEl.textContent = `$${Math.round(annualWithdrawal).toLocaleString()}`;
