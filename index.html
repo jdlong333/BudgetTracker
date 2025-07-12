@@ -79,7 +79,7 @@
 
         <!-- Status Message -->
         <div id="status-message" class="hidden text-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
-          <span class="font-medium">Connection Error:</span> Could not connect to the database. Please check your network connection and refresh.
+          <!-- Content will be set by JS -->
         </div>
 
         <!-- Budget Page Content -->
@@ -371,6 +371,7 @@
                 console.error("Authentication Error:", error);
                 userIdEl.textContent = "Authentication Failed";
                 if (error.code === 'auth/network-request-failed') {
+                    statusMessageEl.innerHTML = `<span class="font-medium">Connection Error:</span> Could not connect to the database. Please check your network connection and refresh.`;
                     statusMessageEl.classList.remove('hidden');
                 }
             }
@@ -400,6 +401,7 @@
             const errorHandler = (error) => {
                 if (error.code === 'unavailable') {
                     console.error("Firestore connection error:", error);
+                    statusMessageEl.innerHTML = `<span class="font-medium">Connection Error:</span> Could not connect to the database. Please check your network connection and refresh.`;
                     statusMessageEl.classList.remove('hidden');
                 } else {
                     console.error("Firestore Error:", error);
