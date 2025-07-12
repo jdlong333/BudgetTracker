@@ -246,7 +246,7 @@
                             <span id="total-contributions-display" class="font-medium text-gray-800">$0.00</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Last Month's Contribution:</span>
+                            <span class="text-gray-600">Ongoing Monthly Contribution:</span>
                             <span id="last-month-contribution-display" class="font-medium text-gray-800">$0.00</span>
                         </div>
                         <div class="flex justify-between">
@@ -681,7 +681,7 @@
             let principal = 0;
             if (settings.monthlyData) {
                 for (const monthKey in settings.monthlyData) {
-                    if (monthKey !== currentMonthKey) {
+                    if (monthKey < currentMonthKey) { // Only past months for principal
                         const monthlySettings = settings.monthlyData[monthKey];
                         for (const key in monthlySettings) {
                             if (key.startsWith('investing_p')) {
@@ -706,13 +706,13 @@
             let projectionBasisText = "last month's";
             let monthlyContribution = lastMonthContribution;
 
-            // If current month has contributions set, use it as the new ongoing rate
+            // If current month has contributions set and it's higher, use it as the new ongoing rate
             const currentMonthSettings = settings.monthlyData?.[currentMonthKey] || {};
             let currentMonthContribution = 0;
             for (let i = 1; i <= numPaychecks; i++) {
                 currentMonthContribution += parseFloat(currentMonthSettings[`investing_p${i}`]) || 0;
             }
-            if (currentMonthContribution > 0) {
+            if (currentMonthContribution > lastMonthContribution) {
                 monthlyContribution = currentMonthContribution;
                 projectionBasisText = "current month's";
             }
@@ -723,7 +723,7 @@
             projectedBalanceEl.textContent = `$${Math.round(projectedValue).toLocaleString()}`;
             annualWithdrawalEl.textContent = `$${Math.round(annualWithdrawal).toLocaleString()}`;
             totalContributionsDisplay.textContent = `$${principal.toFixed(2)}`;
-            lastMonthContributionDisplay.textContent = `$${lastMonthContribution.toFixed(2)}`;
+            lastMonthContributionDisplay.textContent = `$${monthlyContribution.toFixed(2)}`;
             yearsToGrowDisplay.textContent = yearsToGrow;
             projectionBasisEl.textContent = projectionBasisText;
         }
@@ -740,7 +740,7 @@
             let principal = 0;
             if (settings.monthlyData) {
                 for (const monthKey in settings.monthlyData) {
-                    if (monthKey !== currentMonthKey) {
+                    if (monthKey < currentMonthKey) { // Only past months for principal
                         const monthlySettings = settings.monthlyData[monthKey];
                         for (const key in monthlySettings) {
                             if (key.startsWith('investing_p')) {
