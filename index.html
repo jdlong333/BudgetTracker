@@ -293,8 +293,15 @@
         import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-budget-app';
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyHE8aRf6aRkzQL3hhEAV2xsz06y_S354",
+            authDomain: "budget-tracker-46549.firebaseapp.com",
+            projectId: "budget-tracker-46549",
+            storageBucket: "budget-tracker-46549.appspot.com",
+            messagingSenderId: "583352946679",
+            appId: "1:583352946679:web:464e8ce8ea64d70489a8f2",
+            measurementId: "G-BDGLM64MER"
+        };
         
         // --- App Initialization ---
         const app = initializeApp(firebaseConfig);
@@ -355,8 +362,8 @@
                 if (userId !== user.uid) {
                     userId = user.uid;
                     userIdEl.textContent = userId;
-                    transactionsCollection = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
-                    settingsDoc = doc(db, `artifacts/${appId}/users/${userId}/settings/main`);
+                    transactionsCollection = collection(db, `users/${userId}/transactions`);
+                    settingsDoc = doc(db, `users/${userId}/settings/main`);
                     initializeDateSelectors();
                     loadData();
                 }
@@ -735,7 +742,7 @@
             const deleteButton = e.target.closest('.delete-btn');
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
-                try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/transactions`, id)); } 
+                try { await deleteDoc(doc(db, `users/${userId}/transactions`, id)); } 
                 catch (error) { console.error("Error deleting transaction: ", error); }
             }
         });
