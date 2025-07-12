@@ -293,16 +293,14 @@
         import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
-        // IMPORTANT: Replace the placeholder values below with the configuration
-        // from YOUR OWN Firebase project. You can find this in your
-        // Project settings > General > Your apps > SDK setup and configuration.
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDyHE8aRf6aRkzQL3hhEAV2xsz06y_S354",
+            authDomain: "budget-tracker-46549.firebaseapp.com",
+            projectId: "budget-tracker-46549",
+            storageBucket: "budget-tracker-46549.appspot.com",
+            messagingSenderId: "583352946679",
+            appId: "1:583352946679:web:464e8ce8ea64d70489a8f2",
+            measurementId: "G-BDGLM64MER"
         };
         
         // --- App Initialization ---
@@ -364,9 +362,8 @@
                 if (userId !== user.uid) {
                     userId = user.uid;
                     userIdEl.textContent = userId;
-                    const appId = firebaseConfig.appId; // Use appId from your config
-                    transactionsCollection = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
-                    settingsDoc = doc(db, `artifacts/${appId}/users/${userId}/settings/main`);
+                    transactionsCollection = collection(db, `users/${userId}/transactions`);
+                    settingsDoc = doc(db, `users/${userId}/settings/main`);
                     initializeDateSelectors();
                     loadData();
                 }
@@ -847,3 +844,4 @@
 
     </script>
 </body>
+</html>
