@@ -663,26 +663,31 @@
             perPaycheckBillsDisplay.textContent = `$${perPaycheckAmount.toFixed(2)}`;
         }
 
-        function calculateFutureValue(principal, annualContribution, years, annualROR) {
-            let futureValue = principal;
-            for (let i = 0; i < years; i++) {
-                futureValue = (futureValue + annualContribution) * (1 + annualROR);
-            }
-            return futureValue;
+        function calculateFutureValue(principal, monthlyContribution, numMonths, monthlyROR) {
+            if (numMonths <= 0) return principal;
+            const power = Math.pow(1 + monthlyROR, numMonths);
+            return principal * power + monthlyContribution * (power - 1) / monthlyROR;
         }
 
         function calculateInvestmentProjection() {
             const currentAge = parseInt(currentAgeInput.value) || 0;
             const retirementAge = parseInt(retirementAgeInput.value) || 0;
-            const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
-            
+            const baseYearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
+            const remainingYears = baseYearsToGrow - (selectedMonth / 12);
+            const numMonths = remainingYears * 12;
+            const monthlyROR = 0.09 / 12;
+
+            const currentMonthKey = `${selectedYear}-${selectedMonth}`;
+
             let totalContributions = 0;
             if (settings.monthlyData) {
                 for (const monthKey in settings.monthlyData) {
-                    const monthlySettings = settings.monthlyData[monthKey];
-                    for (const key in monthlySettings) {
-                        if (key.startsWith('investing_p')) {
-                            totalContributions += parseFloat(monthlySettings[key]) || 0;
+                    if (monthKey !== currentMonthKey) {
+                        const monthlySettings = settings.monthlyData[monthKey];
+                        for (const key in monthlySettings) {
+                            if (key.startsWith('investing_p')) {
+                                totalContributions += parseFloat(monthlySettings[key]) || 0;
+                            }
                         }
                     }
                 }
@@ -700,53 +705,59 @@
             }
 
             let projectionBasisText = "last month's";
-            let annualContribution = lastMonthContribution * 12;
+            let monthlyContribution = lastMonthContribution;
 
             // Fallback to current month's plan if last month has no data
             if(lastMonthContribution === 0) {
-                const currentMonthKey = `${selectedYear}-${selectedMonth}`;
                 const currentMonthlySettings = settings.monthlyData?.[currentMonthKey] || {};
                 let currentMonthContribution = 0;
                 for (let i = 1; i <= numPaychecks; i++) {
                     currentMonthContribution += parseFloat(currentMonthlySettings[`investing_p${i}`]) || 0;
                 }
-                annualContribution = currentMonthContribution * 12;
+                monthlyContribution = currentMonthContribution;
                 projectionBasisText = "current month's";
             }
 
-            const projectedValue = calculateFutureValue(totalContributions, annualContribution, yearsToGrow, 0.09);
+            const projectedValue = calculateFutureValue(totalContributions, monthlyContribution, numMonths, monthlyROR);
             const annualWithdrawal = projectedValue * 0.04;
 
             projectedBalanceEl.textContent = `$${Math.round(projectedValue).toLocaleString()}`;
             annualWithdrawalEl.textContent = `$${Math.round(annualWithdrawal).toLocaleString()}`;
             totalContributionsDisplay.textContent = `$${totalContributions.toFixed(2)}`;
             lastMonthContributionDisplay.textContent = `$${lastMonthContribution.toFixed(2)}`;
-            yearsToGrowDisplay.textContent = yearsToGrow;
+            yearsToGrowDisplay.textContent = baseYearsToGrow;
             projectionBasisEl.textContent = projectionBasisText;
         }
         
         function runSimulation() {
             const currentAge = parseInt(currentAgeInput.value) || 0;
             const retirementAge = parseInt(retirementAgeInput.value) || 0;
-            const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
+            const baseYearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
+            const remainingYears = baseYearsToGrow - (selectedMonth / 12);
+            const numMonths = remainingYears * 12;
+            const monthlyROR = 0.09 / 12;
+
+            const currentMonthKey = `${selectedYear}-${selectedMonth}`;
 
             let totalContributions = 0;
             if (settings.monthlyData) {
                 for (const monthKey in settings.monthlyData) {
-                    const monthlySettings = settings.monthlyData[monthKey];
-                    for (const key in monthlySettings) {
-                        if (key.startsWith('investing_p')) {
-                            totalContributions += parseFloat(monthlySettings[key]) || 0;
+                    if (monthKey !== currentMonthKey) {
+                        const monthlySettings = settings.monthlyData[monthKey];
+                        for (const key in monthlySettings) {
+                            if (key.startsWith('investing_p')) {
+                                totalContributions += parseFloat(monthlySettings[key]) || 0;
+                            }
                         }
                     }
                 }
             }
             
             const simContribution = parseFloat(simContributionInput.value) || 0;
-            const simPeriodsPerYear = simFrequencySelect.value === 'weekly' ? 52 : 26;
-            const simAnnualContribution = simContribution * simPeriodsPerYear;
+            const periodsPerYear = simFrequencySelect.value === 'weekly' ? 52 : 26;
+            const simMonthlyContribution = simContribution * (periodsPerYear / 12);
 
-            const simValue = calculateFutureValue(totalContributions, simAnnualContribution, yearsToGrow, 0.09);
+            const simValue = calculateFutureValue(totalContributions, simMonthlyContribution, numMonths, monthlyROR);
             simProjectedBalanceEl.textContent = `$${Math.round(simValue).toLocaleString()}`;
         }
 
