@@ -731,14 +731,7 @@
                 settings.currentAge = currentAgeInput.value;
                 settings.retirementAge = retirementAgeInput.value;
                 
-                const monthKey = `${selectedYear}-${selectedMonth}`;
-                if (!settings.monthlyData) settings.monthlyData = {};
-                if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
-
-                for(let i = 1; i <= 4; i++) {
-                    settings.monthlyData[monthKey][`paycheck${i}`] = document.getElementById(`paycheck${i}`).value;
-                }
-                
+                // monthlyData is updated directly on the settings object in other functions
                 await setDoc(settingsDoc, settings, { merge: true });
              } catch (error) { console.error("Error saving settings:", error); }
         }
