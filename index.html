@@ -255,26 +255,6 @@
                         </div>
                     </div>
                 </section>
-                <section class="card">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Projection Simulator</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="sim-contribution" class="block text-sm font-medium text-gray-600">New Contribution Amount</label>
-                            <input type="number" id="sim-contribution" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2" placeholder="e.g., 250">
-                        </div>
-                        <div>
-                            <label for="sim-frequency" class="block text-sm font-medium text-gray-600">Frequency</label>
-                            <select id="sim-frequency" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
-                                <option value="weekly">Weekly</option>
-                                <option value="bi-weekly">Bi-weekly</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="text-center mt-6">
-                        <p class="text-gray-500 text-sm">New Projected Balance</p>
-                        <p id="sim-projected-balance" class="text-3xl font-bold text-blue-600 my-2">$0</p>
-                    </div>
-                </section>
             </main>
         </div>
 
@@ -380,9 +360,6 @@
         const lastMonthContributionDisplay = document.getElementById('last-month-contribution-display');
         const yearsToGrowDisplay = document.getElementById('years-to-grow-display');
         const projectionBasisEl = document.getElementById('projection-basis');
-        const simContributionInput = document.getElementById('sim-contribution');
-        const simFrequencySelect = document.getElementById('sim-frequency');
-        const simProjectedBalanceEl = document.getElementById('sim-projected-balance');
 
         // --- Authentication ---
         async function initializeAuth() {
@@ -519,7 +496,6 @@
             updatePaycheckBreakdown();
             updateAddExpenseHeader(filteredTransactions);
             calculateInvestmentProjection();
-            runSimulation();
         }
 
         function renderTransactions(transactions) {
@@ -727,37 +703,6 @@
             yearsToGrowDisplay.textContent = yearsToGrow;
             projectionBasisEl.textContent = projectionBasisText;
         }
-        
-        function runSimulation() {
-            const currentAge = parseInt(currentAgeInput.value) || 0;
-            const retirementAge = parseInt(retirementAgeInput.value) || 0;
-            const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
-            const numMonths = yearsToGrow * 12 - selectedMonth;
-            const monthlyROR = 0.09 / 12;
-
-            const currentMonthKey = `${selectedYear}-${selectedMonth}`;
-
-            let principal = 0;
-            if (settings.monthlyData) {
-                for (const monthKey in settings.monthlyData) {
-                    if (monthKey < currentMonthKey) { // Only past months for principal
-                        const monthlySettings = settings.monthlyData[monthKey];
-                        for (const key in monthlySettings) {
-                            if (key.startsWith('investing_p')) {
-                                principal += parseFloat(monthlySettings[key]) || 0;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            const simContribution = parseFloat(simContributionInput.value) || 0;
-            const periodsPerYear = simFrequencySelect.value === 'weekly' ? 52 : 26;
-            const simMonthlyContribution = simContribution * (periodsPerYear / 12);
-
-            const simValue = calculateFutureValue(principal, simMonthlyContribution, numMonths, monthlyROR);
-            simProjectedBalanceEl.textContent = `$${Math.round(simValue).toLocaleString()}`;
-        }
 
         async function saveSettings() {
              if (!userId) return;
@@ -925,7 +870,7 @@
         });
 
         // Add focus listeners to all static number inputs
-        [...paycheckInputs, amountInput, currentAgeInput, retirementAgeInput, simContributionInput].forEach(input => {
+        [...paycheckInputs, amountInput, currentAgeInput, retirementAgeInput].forEach(input => {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
@@ -936,8 +881,6 @@
         breakdownPaycheckSelect.addEventListener('change', updatePaycheckBreakdown);
         currentAgeInput.addEventListener('change', saveSettings);
         retirementAgeInput.addEventListener('change', saveSettings);
-        simContributionInput.addEventListener('input', runSimulation);
-        simFrequencySelect.addEventListener('change', runSimulation);
 
         // --- Initial Load ---
         initializeAuth();
