@@ -384,7 +384,7 @@
                 
                 if (userId !== user.uid) {
                     userId = user.uid;
-                    userIdEl.textContent = userId;
+                    userIdEl.textContent = user.displayName || user.email;
                     transactionsCollection = collection(db, `users/${userId}/transactions`);
                     settingsDoc = doc(db, `users/${userId}/settings/main`);
                     initializeDateSelectors();
@@ -482,12 +482,15 @@
         function updateUI() {
             if (!transactionsReady || !settingsReady) return; // Guard clause
 
+            const monthKey = `${selectedYear}-${selectedMonth}`;
+            const monthlySettings = settings.monthlyData?.[monthKey] || {};
+
             // Update global settings inputs from loaded data
             payFrequencySelect.value = settings.payFrequency || 'bi-weekly';
             currentAgeInput.value = settings.currentAge || '';
             retirementAgeInput.value = settings.retirementAge || '';
             for(let i = 1; i <= 4; i++) {
-                document.getElementById(`paycheck${i}`).value = settings[`paycheck${i}`] || '';
+                document.getElementById(`paycheck${i}`).value = monthlySettings[`paycheck${i}`] || '';
             }
             updatePayFrequencyUI(); // Update visibility based on loaded settings
 
@@ -530,7 +533,7 @@
             let income = 0, totalSaved = 0, totalInvested = 0;
             const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
             for (let i = 1; i <= numPaychecks; i++) {
-                income += parseFloat(settings[`paycheck${i}`]) || 0;
+                income += parseFloat(monthlySettings[`paycheck${i}`]) || 0;
                 totalSaved += parseFloat(monthlySettings[`saving_p${i}`]) || 0;
                 totalInvested += parseFloat(monthlySettings[`investing_p${i}`]) || 0;
             }
@@ -546,7 +549,7 @@
             const monthKey = `${selectedYear}-${selectedMonth}`;
             const monthlySettings = settings.monthlyData?.[monthKey] || {};
 
-            const paycheckAmount = parseFloat(document.getElementById(`paycheck${selectedPaycheckIndex}`).value) || 0;
+            const paycheckAmount = parseFloat(monthlySettings[`paycheck${selectedPaycheckIndex}`]) || 0;
             const totalBills = getFilteredTransactions().reduce((sum, t) => sum + parseFloat(t.amount), 0);
             const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
             const proratedBills = numPaychecks > 0 ? totalBills / numPaychecks : 0;
@@ -718,11 +721,15 @@
                 settings.payFrequency = payFrequencySelect.value;
                 settings.currentAge = currentAgeInput.value;
                 settings.retirementAge = retirementAgeInput.value;
+                
+                const monthKey = `${selectedYear}-${selectedMonth}`;
+                if (!settings.monthlyData) settings.monthlyData = {};
+                if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
+
                 for(let i = 1; i <= 4; i++) {
-                    settings[`paycheck${i}`] = document.getElementById(`paycheck${i}`).value;
+                    settings.monthlyData[monthKey][`paycheck${i}`] = document.getElementById(`paycheck${i}`).value;
                 }
                 
-                // monthlyData is updated directly on the settings object in handleBreakdownInputChange
                 await setDoc(settingsDoc, settings, { merge: true });
              } catch (error) { console.error("Error saving settings:", error); }
         }
@@ -812,11 +819,11 @@
 
         function handlePayFrequencyChange(shouldSave = true) {
             updatePayFrequencyUI();
-            updateUI();
             if (shouldSave) {
                 settings.payFrequency = payFrequencySelect.value;
                 saveSettings();
             }
+            updateUI();
         }
 
         function handleBreakdownInputChange(e) {
@@ -830,7 +837,15 @@
             
             settings.monthlyData[monthKey][key] = e.target.value;
             saveSettings();
-            updateUI();
+        }
+
+        function handlePaycheckInputChange(e) {
+            const monthKey = `${selectedYear}-${selectedMonth}`;
+            if (!settings.monthlyData) settings.monthlyData = {};
+            if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
+            
+            settings.monthlyData[monthKey][e.target.id] = e.target.value;
+            saveSettings();
         }
         
         // Use event delegation for dynamically created inputs in the breakdown section
@@ -853,7 +868,7 @@
         monthSelect.addEventListener('change', handlePeriodChange);
         yearSelect.addEventListener('change', handlePeriodChange);
         payFrequencySelect.addEventListener('change', () => handlePayFrequencyChange(true));
-        paycheckInputs.forEach(input => input.addEventListener('change', saveSettings));
+        paycheckInputs.forEach(input => input.addEventListener('change', handlePaycheckInputChange));
         breakdownPaycheckSelect.addEventListener('change', updatePaycheckBreakdown);
         currentAgeInput.addEventListener('change', saveSettings);
         retirementAgeInput.addEventListener('change', saveSettings);
