@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html {
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        body {
+            /* Use Apple's system font, with fallbacks */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; } /* gray-300 */
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; } /* gray-400 */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+        .glass-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .glass-container select {
+            background: rgba(249, 250, 251, 0.7); /* gray-50 */
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.25rem; /* Slightly more rounded */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07); /* Softer shadow */
+            padding: 1.5rem;
+        }
+        .input-field {
+            background-color: #f9fafb; /* bg-gray-50 */
+            border-color: #e5e7eb; /* border-gray-200 */
+        }
+        .input-field:focus {
+             --tw-ring-color: rgb(59 130 246 / 0.5); /* blue-500 with opacity */
+             border-color: #3b82f6; /* blue-500 */
+        }
+        .nav-tab {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-tab.active {
+            color: #2563eb; /* blue-600 */
+            background-color: #eff6ff; /* blue-50 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-700">
+
+    <div class="container mx-auto max-w-lg p-4 pb-24"> <!-- Added padding-bottom for nav bar -->
+        <!-- Header -->
+        <header class="text-center my-6 relative">
+            <h1 class="text-4xl font-bold text-gray-800">Budget Tracker</h1>
+        </header>
+
+        <!-- Status Message -->
+        <div id="status-message" class="hidden text-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+          <span class="font-medium">Connection Error:</span> Could not connect to the database. Please check your network connection and refresh.
+        </div>
+
+        <!-- Budget Page Content -->
+        <main id="budget-page" class="space-y-8">
+            <!-- Summary Section -->
+            <section id="summary" class="card">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">Summary</h2>
+                <div class="grid grid-cols-3 gap-4 text-center py-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Income</p>
+                        <p id="total-income" class="text-2xl font-bold text-green-600">$0.00</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Saved</p>
+                        <p id="total-saved" class="text-2xl font-bold text-blue-600">$0.00</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Invested</p>
+                        <p id="total-invested" class="text-2xl font-bold text-purple-600">$0.00</p>
+                    </div>
+                </div>
+                 <div class="glass-container">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Period:</label>
+                    <div class="flex space-x-2">
+                        <select id="month-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800"></select>
+                        <select id="year-select" class="block w-full rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-gray-800"></select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Income Section -->
+            <section id="income-section" class="card">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Monthly Income</h2>
+                    <select id="pay-frequency" class="text-sm rounded-lg border-gray-200 bg-gray-50 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-1">
+                        <option value="bi-weekly">Bi-weekly</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="paycheck1" class="block text-sm font-medium text-gray-600">Paycheck 1</label>
+                        <input type="number" id="paycheck1" placeholder="0.00" step="0.01" class="paycheck-input input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="paycheck2" class="block text-sm font-medium text-gray-600">Paycheck 2</label>
+                        <input type="number" id="paycheck2" placeholder="0.00" step="0.01" class="paycheck-input input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                    </div>
+                    <div id="weekly-paychecks" class="space-y-4 hidden">
+                         <div>
+                            <label for="paycheck3" class="block text-sm font-medium text-gray-600">Paycheck 3</label>
+                            <input type="number" id="paycheck3" placeholder="0.00" step="0.01" class="paycheck-input input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="paycheck4" class="block text-sm font-medium text-gray-600">Paycheck 4</label>
+                            <input type="number" id="paycheck4" placeholder="0.00" step="0.01" class="paycheck-input input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Paycheck Breakdown Section -->
+            <section id="paycheck-breakdown-section" class="card">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Paycheck Breakdown</h2>
+                    <select id="breakdown-paycheck-select" class="text-sm rounded-lg border-gray-200 bg-gray-50 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-1"></select>
+                </div>
+                <div id="breakdown-details" class="space-y-2">
+                    <!-- Breakdown items will be dynamically inserted here -->
+                </div>
+            </section>
+
+            <!-- Add Expense Section -->
+            <section id="add-transaction" class="card">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Add Bill/Expense</h2>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Total: <span id="total-monthly-bills-display" class="font-semibold text-red-600">$0.00</span></p>
+                        <p class="text-sm text-gray-500">Per Check: <span id="per-paycheck-bills-display" class="font-semibold text-red-600">$0.00</span></p>
+                    </div>
+                </div>
+                <form id="transaction-form" class="space-y-4">
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-600">Description</label>
+                        <input type="text" id="description" placeholder="e.g., Rent, Groceries" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2" required>
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-600">Amount</label>
+                        <input type="number" id="amount" placeholder="0.00" step="0.01" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-semibold">
+                        Add Expense
+                    </button>
+                </form>
+            </section>
+
+            <!-- Transactions List Section -->
+            <section id="transactions" class="card">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">History</h2>
+                    <button id="import-bills" class="bg-gray-200 text-gray-700 text-sm py-1 px-3 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 font-semibold">
+                        Import Bills
+                    </button>
+                </div>
+                <ul id="transaction-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Transactions will be dynamically inserted here -->
+                </ul>
+            </section>
+        </main>
+
+        <!-- Investing Page Content -->
+        <main id="investing-page" class="space-y-8 hidden">
+            <section class="card">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Retirement Profile</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="current-age" class="block text-sm font-medium text-gray-600">Current Age</label>
+                        <input type="number" id="current-age" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                    </div>
+                    <div>
+                        <label for="retirement-age" class="block text-sm font-medium text-gray-600">Retirement Age</label>
+                        <input type="number" id="retirement-age" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                    </div>
+                </div>
+            </section>
+            <section class="card text-center">
+                <div class="grid grid-cols-2 divide-x divide-gray-200">
+                    <div class="px-2 sm:px-4">
+                        <p class="text-gray-500 text-sm">Projected Balance</p>
+                        <p id="projected-balance" class="text-3xl font-bold text-green-600 my-2">$0</p>
+                    </div>
+                    <div class="px-2 sm:px-4">
+                         <p class="text-gray-500 text-sm">Annual Income (4%)</p>
+                         <p id="annual-withdrawal" class="text-3xl font-bold text-green-600 my-2">$0</p>
+                    </div>
+                </div>
+                 <p class="text-xs text-gray-400 mt-4 pt-4 border-t border-gray-200">Based on <span id="projection-basis">last month's</span> contributions and a <span class="font-semibold">9%</span> average annual return.</p>
+            </section>
+             <section class="card">
+                 <h3 class="text-lg font-semibold text-gray-800 mb-2">Current Snapshot</h3>
+                 <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Contributions to Date:</span>
+                        <span id="total-contributions-display" class="font-medium text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Last Month's Contribution:</span>
+                        <span id="last-month-contribution-display" class="font-medium text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Years to Grow:</span>
+                        <span id="years-to-grow-display" class="font-medium text-gray-800">0</span>
+                    </div>
+                 </div>
+            </section>
+            <section class="card">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Projection Simulator</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="sim-contribution" class="block text-sm font-medium text-gray-600">New Contribution Amount</label>
+                        <input type="number" id="sim-contribution" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2" placeholder="e.g., 250">
+                    </div>
+                    <div>
+                        <label for="sim-frequency" class="block text-sm font-medium text-gray-600">Frequency</label>
+                        <select id="sim-frequency" class="input-field mt-1 block w-full rounded-lg shadow-sm sm:text-sm p-2">
+                            <option value="weekly">Weekly</option>
+                            <option value="bi-weekly">Bi-weekly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <p class="text-gray-500 text-sm">New Projected Balance</p>
+                    <p id="sim-projected-balance" class="text-3xl font-bold text-blue-600 my-2">$0</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- User ID Display -->
+        <footer class="text-center mt-8">
+            <p class="text-xs text-gray-500">User ID: <span id="user-id">Loading...</span></p>
+        </footer>
+
+        <!-- Navigation Bar -->
+        <nav id="nav-bar" class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-gray-200 shadow-t-sm">
+            <div class="max-w-lg mx-auto flex justify-around">
+                <button data-page="budget-page" class="nav-tab active flex-1 flex flex-col items-center p-3 text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    <span class="text-xs">Budget</span>
+                </button>
+                <button data-page="investing-page" class="nav-tab flex-1 flex flex-col items-center p-3 text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    <span class="text-xs">Investing</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-budget-app';
+        
+        // --- App Initialization ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let userId = null;
+        let transactionsCollection;
+        let settingsDoc;
+        let unsubscribeTransactions = () => {};
+        let unsubscribeSettings = () => {};
+        let allTransactions = [];
+        let settings = {};
+        let selectedMonth = new Date().getMonth();
+        let selectedYear = new Date().getFullYear();
+
+        // --- DOM Elements ---
+        const statusMessageEl = document.getElementById('status-message');
+        const budgetPage = document.getElementById('budget-page');
+        const investingPage = document.getElementById('investing-page');
+        const navBar = document.getElementById('nav-bar');
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const totalIncomeEl = document.getElementById('total-income');
+        const totalSavedEl = document.getElementById('total-saved');
+        const totalInvestedEl = document.getElementById('total-invested');
+        const transactionForm = document.getElementById('transaction-form');
+        const descriptionInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const transactionList = document.getElementById('transaction-list');
+        const userIdEl = document.getElementById('user-id');
+        const paycheckInputs = document.querySelectorAll('.paycheck-input');
+        const payFrequencySelect = document.getElementById('pay-frequency');
+        const weeklyPaychecksContainer = document.getElementById('weekly-paychecks');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const importBillsBtn = document.getElementById('import-bills');
+        const breakdownPaycheckSelect = document.getElementById('breakdown-paycheck-select');
+        const breakdownDetailsContainer = document.getElementById('breakdown-details');
+        const totalMonthlyBillsDisplay = document.getElementById('total-monthly-bills-display');
+        const perPaycheckBillsDisplay = document.getElementById('per-paycheck-bills-display');
+        const currentAgeInput = document.getElementById('current-age');
+        const retirementAgeInput = document.getElementById('retirement-age');
+        const projectedBalanceEl = document.getElementById('projected-balance');
+        const annualWithdrawalEl = document.getElementById('annual-withdrawal');
+        const totalContributionsDisplay = document.getElementById('total-contributions-display');
+        const lastMonthContributionDisplay = document.getElementById('last-month-contribution-display');
+        const yearsToGrowDisplay = document.getElementById('years-to-grow-display');
+        const projectionBasisEl = document.getElementById('projection-basis');
+        const simContributionInput = document.getElementById('sim-contribution');
+        const simFrequencySelect = document.getElementById('sim-frequency');
+        const simProjectedBalanceEl = document.getElementById('sim-projected-balance');
+
+        // --- Authentication ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                if (userId !== user.uid) {
+                    userId = user.uid;
+                    userIdEl.textContent = userId;
+                    transactionsCollection = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+                    settingsDoc = doc(db, `artifacts/${appId}/users/${userId}/settings/main`);
+                    initializeDateSelectors();
+                    loadData();
+                }
+            } else {
+                userId = null;
+                userIdEl.textContent = "Not signed in";
+                unsubscribeTransactions();
+                unsubscribeSettings();
+                transactionList.innerHTML = '<li class="text-center text-gray-500 py-4">Please sign in to see your budget.</li>';
+            }
+        });
+
+        async function signInAndSetup() {
+            try {
+                statusMessageEl.classList.add('hidden');
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                userIdEl.textContent = "Authentication Failed";
+                if (error.code === 'auth/network-request-failed') {
+                    statusMessageEl.classList.remove('hidden');
+                }
+            }
+        }
+
+        // --- Date Handling ---
+        function initializeDateSelectors() {
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthSelect.innerHTML = months.map((month, index) => `<option value="${index}">${month}</option>`).join('');
+            
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '';
+            for (let i = currentYear + 10; i >= currentYear - 5; i--) {
+                yearSelect.innerHTML += `<option value="${i}">${i}</option>`;
+            }
+
+            monthSelect.value = selectedMonth;
+            yearSelect.value = selectedYear;
+        }
+
+        // --- Data Handling & Filtering ---
+        function loadData() {
+            if (!userId) return;
+            unsubscribeTransactions();
+            unsubscribeSettings();
+
+            const errorHandler = (error) => {
+                if (error.code === 'unavailable') {
+                    console.error("Firestore connection error:", error);
+                    statusMessageEl.classList.remove('hidden');
+                } else {
+                    console.error("Firestore Error:", error);
+                }
+            };
+
+            unsubscribeTransactions = onSnapshot(query(transactionsCollection), (snapshot) => {
+                statusMessageEl.classList.add('hidden');
+                allTransactions = [];
+                snapshot.forEach(doc => {
+                    allTransactions.push({ id: doc.id, ...doc.data() });
+                });
+                updateUI();
+            }, errorHandler);
+
+            unsubscribeSettings = onSnapshot(settingsDoc, (doc) => {
+                statusMessageEl.classList.add('hidden');
+                settings = doc.exists() ? doc.data() : { monthlyData: {} };
+                if (!settings.monthlyData) settings.monthlyData = {};
+                
+                payFrequencySelect.value = settings.payFrequency || 'bi-weekly';
+                currentAgeInput.value = settings.currentAge || '';
+                retirementAgeInput.value = settings.retirementAge || '';
+                for(let i = 1; i <= 4; i++) {
+                    document.getElementById(`paycheck${i}`).value = settings[`paycheck${i}`] || '';
+                }
+                handlePayFrequencyChange(false);
+                updateUI(); 
+            }, errorHandler);
+        }
+
+        function getFilteredTransactions() {
+            return allTransactions.filter(transaction => {
+                const transactionDate = new Date(transaction.timestamp);
+                return transactionDate.getMonth() == selectedMonth && transactionDate.getFullYear() == selectedYear;
+            });
+        }
+
+        // --- UI Rendering ---
+        function updateUI() {
+            const filteredTransactions = getFilteredTransactions();
+            renderTransactions(filteredTransactions);
+            updateSummary();
+            updatePaycheckBreakdown();
+            updateAddExpenseHeader(filteredTransactions);
+            calculateInvestmentProjection();
+            runSimulation();
+        }
+
+        function renderTransactions(transactions) {
+            transactionList.innerHTML = '';
+            if (transactions.length === 0) {
+                transactionList.innerHTML = `<li class="text-center text-gray-500 py-4">No expenses logged for this period.</li>`;
+                return;
+            }
+            
+            transactions.sort((a, b) => b.timestamp - a.timestamp).forEach(transaction => {
+                const li = document.createElement('li');
+                li.className = `flex justify-between items-center p-3 rounded-lg fade-in bg-red-50`;
+                li.innerHTML = `
+                    <div class="flex-grow">
+                        <p class="font-medium text-gray-800">${transaction.description}</p>
+                        <p class="text-xs text-gray-500">${new Date(transaction.timestamp).toLocaleDateString()}</p>
+                    </div>
+                    <span class="font-bold text-red-600">-$${parseFloat(transaction.amount).toFixed(2)}</span>
+                    <button data-id="${transaction.id}" class="delete-btn ml-4 text-gray-400 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>`;
+                transactionList.appendChild(li);
+            });
+        }
+
+        function updateSummary() {
+            const monthKey = `${selectedYear}-${selectedMonth}`;
+            const monthlySettings = settings.monthlyData?.[monthKey] || {};
+            
+            let income = 0, totalSaved = 0, totalInvested = 0;
+            const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
+            for (let i = 1; i <= numPaychecks; i++) {
+                income += parseFloat(settings[`paycheck${i}`]) || 0;
+                totalSaved += parseFloat(monthlySettings[`saving_p${i}`]) || 0;
+                totalInvested += parseFloat(monthlySettings[`investing_p${i}`]) || 0;
+            }
+            totalIncomeEl.textContent = `$${income.toFixed(2)}`;
+            totalSavedEl.textContent = `$${totalSaved.toFixed(2)}`;
+            totalInvestedEl.textContent = `$${totalInvested.toFixed(2)}`;
+        }
+
+        function updatePaycheckBreakdown() {
+            const selectedPaycheckIndex = breakdownPaycheckSelect.value;
+            if (!selectedPaycheckIndex) return;
+
+            const monthKey = `${selectedYear}-${selectedMonth}`;
+            const monthlySettings = settings.monthlyData?.[monthKey] || {};
+
+            const paycheckAmount = parseFloat(document.getElementById(`paycheck${selectedPaycheckIndex}`).value) || 0;
+            const totalBills = getFilteredTransactions().reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
+            const proratedBills = numPaychecks > 0 ? totalBills / numPaychecks : 0;
+            
+            const savingAmount = parseFloat(monthlySettings[`saving_p${selectedPaycheckIndex}`]) || 0;
+            const investingAmount = parseFloat(monthlySettings[`investing_p${selectedPaycheckIndex}`]) || 0;
+            const remainingAmount = paycheckAmount - proratedBills - savingAmount - investingAmount;
+
+            const formatPercent = (amount) => paycheckAmount > 0 ? `(${(amount / paycheckAmount * 100).toFixed(1)}%)` : '(0.0%)';
+
+            breakdownDetailsContainer.innerHTML = `
+                <div class="flex justify-between items-center pb-2">
+                    <span class="text-gray-600">Income:</span>
+                    <div class="flex items-baseline justify-end space-x-2">
+                        <span class="w-24 text-right font-semibold text-green-600">$${paycheckAmount.toFixed(2)}</span>
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(paycheckAmount)}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 pb-2">
+                    <span class="text-gray-600">Bills:</span>
+                    <div class="flex items-baseline justify-end space-x-2">
+                        <span class="w-24 text-right font-semibold text-red-600">-$${proratedBills.toFixed(2)}</span>
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(proratedBills)}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 pb-2">
+                    <label for="saving-breakdown" class="text-gray-600">Saving:</label>
+                    <div class="flex items-baseline justify-end space-x-2">
+                        <input type="number" id="saving-breakdown" value="${savingAmount.toFixed(2)}" class="w-24 text-right font-semibold border-b border-gray-300 text-blue-600 focus:outline-none bg-transparent" placeholder="0.00">
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(savingAmount)}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 pb-2">
+                    <label for="investing-breakdown" class="text-gray-600">Investing:</label>
+                    <div class="flex items-baseline justify-end space-x-2">
+                        <input type="number" id="investing-breakdown" value="${investingAmount.toFixed(2)}" class="w-24 text-right font-semibold border-b border-gray-300 text-purple-600 focus:outline-none bg-transparent" placeholder="0.00">
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(investingAmount)}</span>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 pt-3 mt-2"></div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-semibold">Left to Spend:</span>
+                    <div class="flex items-baseline justify-end space-x-2">
+                        <span class="w-24 text-right font-bold text-gray-800">$${remainingAmount.toFixed(2)}</span>
+                        <span class="w-16 text-left text-xs text-gray-500 font-normal">${formatPercent(remainingAmount)}</span>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-2">
+                    <div class="h-2.5 w-full bg-gray-200 rounded-full flex overflow-hidden">
+                        <div id="bar-bills" class="bg-red-500 transition-all duration-300"></div>
+                        <div id="bar-saving" class="bg-blue-500 transition-all duration-300"></div>
+                        <div id="bar-investing" class="bg-purple-600 transition-all duration-300"></div>
+                        <div id="bar-remaining" class="bg-green-500 transition-all duration-300"></div>
+                    </div>
+                </div>
+            `;
+            
+            const billsPercent = paycheckAmount > 0 ? (proratedBills / paycheckAmount) * 100 : 0;
+            const savingPercent = paycheckAmount > 0 ? (savingAmount / paycheckAmount) * 100 : 0;
+            const investingPercent = paycheckAmount > 0 ? (investingAmount / paycheckAmount) * 100 : 0;
+            const remainingPercent = paycheckAmount > 0 ? (remainingAmount / paycheckAmount) * 100 : 0;
+
+            document.getElementById('bar-bills').style.width = `${billsPercent}%`;
+            document.getElementById('bar-saving').style.width = `${savingPercent}%`;
+            document.getElementById('bar-investing').style.width = `${investingPercent}%`;
+            document.getElementById('bar-remaining').style.width = `${Math.max(0, remainingPercent)}%`;
+        }
+
+        function updateAddExpenseHeader(filteredTransactions) {
+            const totalBills = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            const numPaychecks = payFrequencySelect.value === 'weekly' ? 4 : 2;
+            const perPaycheckAmount = numPaychecks > 0 ? totalBills / numPaychecks : 0;
+
+            totalMonthlyBillsDisplay.textContent = `$${totalBills.toFixed(2)}`;
+            perPaycheckBillsDisplay.textContent = `$${perPaycheckAmount.toFixed(2)}`;
+        }
+
+        function calculateFutureValue(principal, annualContribution, years, annualROR) {
+            let futureValue = principal;
+            for (let i = 0; i < years; i++) {
+                futureValue = (futureValue + annualContribution) * (1 + annualROR);
+            }
+            return futureValue;
+        }
+
+        function calculateInvestmentProjection() {
+            const currentAge = parseInt(currentAgeInput.value);
+            const retirementAge = parseInt(retirementAgeInput.value);
+            const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
+            
+            let totalContributions = 0;
+            if (settings.monthlyData) {
+                for (const monthKey in settings.monthlyData) {
+                    const monthlySettings = settings.monthlyData[monthKey];
+                    for (const key in monthlySettings) {
+                        if (key.startsWith('investing_p')) {
+                            totalContributions += parseFloat(monthlySettings[key]) || 0;
+                        }
+                    }
+                }
+            }
+            
+            let lastMonthDate = new Date();
+            lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+            const lastMonthKey = `${lastMonthDate.getFullYear()}-${lastMonthDate.getMonth()}`;
+            const lastMonthSettings = settings.monthlyData?.[lastMonthKey] || {};
+            
+            let lastMonthContribution = 0;
+            const numPaychecks = settings.payFrequency === 'weekly' ? 4 : 2;
+             for (let i = 1; i <= numPaychecks; i++) {
+                lastMonthContribution += parseFloat(lastMonthSettings[`investing_p${i}`]) || 0;
+            }
+
+            let projectionBasisText = "last month's";
+            let annualContribution = lastMonthContribution * 12;
+
+            // Fallback to current month's plan if last month has no data
+            if(lastMonthContribution === 0) {
+                const currentMonthKey = `${selectedYear}-${selectedMonth}`;
+                const currentMonthlySettings = settings.monthlyData?.[currentMonthKey] || {};
+                let currentMonthContribution = 0;
+                for (let i = 1; i <= numPaychecks; i++) {
+                    currentMonthContribution += parseFloat(currentMonthlySettings[`investing_p${i}`]) || 0;
+                }
+                annualContribution = currentMonthContribution * 12;
+                projectionBasisText = "current month's";
+            }
+
+            const projectedValue = calculateFutureValue(totalContributions, annualContribution, yearsToGrow, 0.09);
+            const annualWithdrawal = projectedValue * 0.04;
+
+            projectedBalanceEl.textContent = `$${Math.round(projectedValue).toLocaleString()}`;
+            annualWithdrawalEl.textContent = `$${Math.round(annualWithdrawal).toLocaleString()}`;
+            totalContributionsDisplay.textContent = `$${totalContributions.toFixed(2)}`;
+            lastMonthContributionDisplay.textContent = `$${lastMonthContribution.toFixed(2)}`;
+            yearsToGrowDisplay.textContent = yearsToGrow;
+            projectionBasisEl.textContent = projectionBasisText;
+        }
+        
+        function runSimulation() {
+            const currentAge = parseInt(currentAgeInput.value);
+            const retirementAge = parseInt(retirementAgeInput.value);
+            const yearsToGrow = retirementAge > currentAge ? retirementAge - currentAge : 0;
+
+            let totalContributions = 0;
+            if (settings.monthlyData) {
+                for (const monthKey in settings.monthlyData) {
+                    const monthlySettings = settings.monthlyData[monthKey];
+                    for (const key in monthlySettings) {
+                        if (key.startsWith('investing_p')) {
+                            totalContributions += parseFloat(monthlySettings[key]) || 0;
+                        }
+                    }
+                }
+            }
+            
+            const simContribution = parseFloat(simContributionInput.value) || 0;
+            const simPeriodsPerYear = simFrequencySelect.value === 'weekly' ? 52 : 26;
+            const simAnnualContribution = simContribution * simPeriodsPerYear;
+
+            const simValue = calculateFutureValue(totalContributions, simAnnualContribution, yearsToGrow, 0.09);
+            simProjectedBalanceEl.textContent = `$${Math.round(simValue).toLocaleString()}`;
+        }
+
+        async function saveSettings() {
+             if (!userId) return;
+             try {
+                // Save global settings
+                settings.payFrequency = payFrequencySelect.value;
+                settings.currentAge = currentAgeInput.value;
+                settings.retirementAge = retirementAgeInput.value;
+                for(let i = 1; i <= 4; i++) {
+                    settings[`paycheck${i}`] = document.getElementById(`paycheck${i}`).value;
+                }
+                
+                // monthlyData is updated directly on the settings object in handleBreakdownInputChange
+                await setDoc(settingsDoc, settings, { merge: true });
+             } catch (error) { console.error("Error saving settings:", error); }
+        }
+
+        // --- Event Listeners ---
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const pageId = tab.dataset.page;
+                navTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                budgetPage.classList.toggle('hidden', pageId !== 'budget-page');
+                investingPage.classList.toggle('hidden', pageId !== 'investing-page');
+            });
+        });
+
+        transactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) return;
+            const description = descriptionInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            if (description === '' || isNaN(amount) || amount <= 0) return;
+            const transactionDate = new Date(selectedYear, selectedMonth, new Date().getDate());
+            try {
+                await addDoc(transactionsCollection, { description, amount, type: 'expense', timestamp: transactionDate.getTime() });
+                transactionForm.reset();
+            } catch (error) { console.error("Error adding transaction: ", error); }
+        });
+        
+        transactionList.addEventListener('click', async (e) => {
+            const deleteButton = e.target.closest('.delete-btn');
+            if (deleteButton) {
+                const id = deleteButton.dataset.id;
+                try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/transactions`, id)); } 
+                catch (error) { console.error("Error deleting transaction: ", error); }
+            }
+        });
+        
+        importBillsBtn.addEventListener('click', async () => {
+            if (!userId) return;
+            let prevMonth = selectedMonth - 1, prevYear = selectedYear;
+            if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+
+            const prevMonthTransactions = allTransactions.filter(t => {
+                const d = new Date(t.timestamp);
+                return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+            });
+
+            if (prevMonthTransactions.length === 0) { alert("No bills found in the previous month to import."); return; }
+            const currentMonthDescriptions = new Set(getFilteredTransactions().map(t => t.description));
+            const batch = writeBatch(db);
+            let importCount = 0;
+
+            prevMonthTransactions.forEach(t => {
+                if (!currentMonthDescriptions.has(t.description)) {
+                    const newDocRef = doc(transactionsCollection);
+                    batch.set(newDocRef, { description: t.description, amount: t.amount, type: 'expense', timestamp: new Date(selectedYear, selectedMonth, 1).getTime() });
+                    importCount++;
+                }
+            });
+
+            if (importCount > 0) {
+                try { await batch.commit(); alert(`Successfully imported ${importCount} bill(s).`); } 
+                catch (error) { console.error("Error importing bills: ", error); }
+            } else { alert("All bills from the previous month already exist."); }
+        });
+        
+        function handlePeriodChange() {
+            selectedMonth = parseInt(monthSelect.value);
+            selectedYear = parseInt(yearSelect.value);
+            updateUI();
+        }
+
+        function handlePayFrequencyChange(shouldSave = true) {
+            const isWeekly = payFrequencySelect.value === 'weekly';
+            weeklyPaychecksContainer.classList.toggle('hidden', !isWeekly);
+            
+            const numPaychecks = isWeekly ? 4 : 2;
+            const currentSelection = breakdownPaycheckSelect.value;
+            breakdownPaycheckSelect.innerHTML = '';
+            for(let i=1; i<=numPaychecks; i++) {
+                breakdownPaycheckSelect.innerHTML += `<option value="${i}">Paycheck ${i}</option>`;
+            }
+            if (currentSelection <= numPaychecks) {
+                breakdownPaycheckSelect.value = currentSelection;
+            }
+
+            updateUI();
+            if (shouldSave) saveSettings();
+        }
+
+        function handleBreakdownInputChange(e) {
+            const selectedPaycheckIndex = breakdownPaycheckSelect.value;
+            const type = e.target.id.split('-')[0];
+            const key = `${type}_p${selectedPaycheckIndex}`;
+            
+            const monthKey = `${selectedYear}-${selectedMonth}`;
+            if (!settings.monthlyData) settings.monthlyData = {};
+            if (!settings.monthlyData[monthKey]) settings.monthlyData[monthKey] = {};
+            
+            settings.monthlyData[monthKey][key] = e.target.value;
+            saveSettings();
+            updateUI();
+        }
+        
+        // Use event delegation for dynamically created inputs in the breakdown section
+        breakdownDetailsContainer.addEventListener('focusin', (e) => {
+            if (e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
+                e.target.select();
+            }
+        });
+        breakdownDetailsContainer.addEventListener('change', (e) => {
+            if (e.target.matches('#saving-breakdown') || e.target.matches('#investing-breakdown')) {
+                handleBreakdownInputChange(e);
+            }
+        });
+
+        // Add focus listeners to all static number inputs
+        [...paycheckInputs, amountInput, currentAgeInput, retirementAgeInput, simContributionInput].forEach(input => {
+            input.addEventListener('focus', (e) => e.target.select());
+        });
+
+        monthSelect.addEventListener('change', handlePeriodChange);
+        yearSelect.addEventListener('change', handlePeriodChange);
+        payFrequencySelect.addEventListener('change', () => handlePayFrequencyChange(true));
+        paycheckInputs.forEach(input => input.addEventListener('change', saveSettings));
+        breakdownPaycheckSelect.addEventListener('change', updatePaycheckBreakdown);
+        currentAgeInput.addEventListener('change', saveSettings);
+        retirementAgeInput.addEventListener('change', saveSettings);
+        simContributionInput.addEventListener('input', runSimulation);
+        simFrequencySelect.addEventListener('change', runSimulation);
+
+        // --- Initial Load ---
+        signInAndSetup();
+
+    </script>
+</body>
+</html>
