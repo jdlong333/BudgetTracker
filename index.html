@@ -302,7 +302,7 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, collection, addDoc, writeBatch, query, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
@@ -375,34 +375,43 @@
         const simProjectedBalanceEl = document.getElementById('sim-projected-balance');
 
         // --- Authentication ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // User is signed in.
-                loggedOutView.classList.add('hidden');
-                loggedInContent.classList.remove('hidden');
-                navBar.classList.remove('hidden');
-                
-                if (userId !== user.uid) {
-                    userId = user.uid;
-                    userIdEl.textContent = user.displayName || user.email;
-                    transactionsCollection = collection(db, `users/${userId}/transactions`);
-                    settingsDoc = doc(db, `users/${userId}/settings/main`);
-                    initializeDateSelectors();
-                    loadData();
-                    renderSignOutButton(user);
-                }
-            } else {
-                // User is signed out.
-                userId = null;
-                userIdEl.textContent = "Not signed in";
-                loggedOutView.classList.remove('hidden');
-                loggedInContent.classList.add('hidden');
-                navBar.classList.add('hidden');
-                authContainer.innerHTML = ''; // Clear sign-out button
-                unsubscribeTransactions();
-                unsubscribeSettings();
+        async function initializeAuth() {
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        // User is signed in.
+                        loggedOutView.classList.add('hidden');
+                        loggedInContent.classList.remove('hidden');
+                        navBar.classList.remove('hidden');
+                        
+                        if (userId !== user.uid) {
+                            userId = user.uid;
+                            userIdEl.textContent = user.displayName || user.email;
+                            transactionsCollection = collection(db, `users/${userId}/transactions`);
+                            settingsDoc = doc(db, `users/${userId}/settings/main`);
+                            initializeDateSelectors();
+                            loadData();
+                            renderSignOutButton(user);
+                        }
+                    } else {
+                        // User is signed out.
+                        userId = null;
+                        userIdEl.textContent = "Not signed in";
+                        loggedOutView.classList.remove('hidden');
+                        loggedInContent.classList.add('hidden');
+                        navBar.classList.add('hidden');
+                        authContainer.innerHTML = ''; // Clear sign-out button
+                        unsubscribeTransactions();
+                        unsubscribeSettings();
+                    }
+                });
+            } catch (error) {
+                console.error("Auth Persistence Error:", error);
+                statusMessageEl.innerHTML = `<span class="font-medium">Error:</span> Could not enable offline persistence. Data may not be saved between sessions.`;
+                statusMessageEl.classList.remove('hidden');
             }
-        });
+        }
         
         function renderSignOutButton(user) {
             authContainer.innerHTML = `
@@ -818,11 +827,11 @@
         }
 
         function handlePayFrequencyChange(shouldSave = true) {
-            updatePayFrequencyUI();
             if (shouldSave) {
                 settings.payFrequency = payFrequencySelect.value;
                 saveSettings();
             }
+            updatePayFrequencyUI();
             updateUI();
         }
 
@@ -876,7 +885,7 @@
         simFrequencySelect.addEventListener('change', runSimulation);
 
         // --- Initial Load ---
-        signInAndSetup();
+        initializeAuth();
 
     </script>
 </body>
